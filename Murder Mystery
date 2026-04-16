@@ -1,0 +1,751 @@
+import { useState, useEffect } from "react";
+
+const CASES = [
+  {
+    id: "EUR-01",
+    country: "GERMANY",
+    flag: "🇩🇪",
+    title: "DIESEL DAMNATION",
+    subtitle: "Wolfsburg, 2015. The software lied. So did someone else.",
+    era: "September 2015",
+    setting:
+      "Wolfsburg, Germany. Three days before the US EPA's public announcement of the Volkswagen defeat device scandal, a mid-level emissions compliance engineer is found dead in the Mittellandkanal. His laptop is missing. His access badge was used to enter the R&D building at 2 AM.",
+    victim: {
+      name: "THOMAS BREITNER",
+      role: "Emissions Compliance Engineer, Volkswagen AG",
+      bio: "A 38-year-old engineer who had worked on the EA 189 diesel engine team since 2008. In the months before his death, he had begun cooperating quietly with an internal US legal team preparing for DOJ proceedings. He had documented, in personal encrypted notes, exactly who authorised the Akustikfunktion — the internal name for the defeat device code. He had arranged to meet a US Department of Justice contact in Frankfurt the following week.",
+      clue: "🔧 His personal calendar shows a recurring meeting labeled 'AF-Kontrolle' every Thursday for 18 months — a meeting that appears nowhere in official VW scheduling systems.",
+    },
+    suspects: [
+      {
+        name: "DIPL.-ING. WERNER KASTL",
+        role: "Head of Powertrain Software, VW AG",
+        age: 54,
+        motive:
+          "Breitner's notes directly named Kastl as the engineer who signed off on deploying the defeat device in production models. Criminal prosecution in Germany and the US would mean prison. He had already hired a defence attorney in Hamburg.",
+        alibi:
+          "Attending a supplier conference in Stuttgart. Hotel confirmed. But his personal vehicle's mileage log — submitted to VW fleet — shows 280km more than the Stuttgart route.",
+        secret:
+          "He personally approved the software patch in 2009 under instruction from above, but the paper trail stops at his desk. He destroyed his project archive three weeks before Breitner's death.",
+        tell: "When pressed, he defaults to engineering jargon — 'thermally conditioned operating parameters' — to make misconduct sound like standard procedure.",
+        evidence:
+          "💾 A USB drive retrieved from Breitner's desk drawer contains a partial email chain. The last visible sender before the chain was manually truncated: W.KASTL@volkswagen.de",
+        guilty: false,
+      },
+      {
+        name: "CLAUDIA VORRINK",
+        role: "Head of Legal & Compliance, VW Europe",
+        age: 49,
+        motive:
+          "She had been managing the internal cover-up for two years — suppressing US audit queries and coaching engineers to give non-answers. Breitner's DOJ cooperation would expose her obstruction. Her career, freedom, and €2.4M deferred bonus all at stake.",
+        alibi:
+          "In Brüssel for a European Automobile Manufacturers lobbying meeting. Flight records confirm. However, she placed three calls to Wolfsburg that evening from a second mobile registered under her maiden name.",
+        secret:
+          "She drafted the internal legal memo that reclassified the defeat device as a 'calibration variant' — a document that was distributed to engineers as legal cover and later destroyed.",
+        tell:
+          "Uses the phrase 'we followed all applicable regulatory frameworks' before answering any direct question, a verbal spacer she deploys to buy thinking time.",
+        evidence:
+          "📱 Cell tower records for her secondary phone show it pinged a Wolfsburg tower at 23:47 — while her primary phone remained in Brussels.",
+        guilty: false,
+      },
+      {
+        name: "PIETER VAN HOUTEN",
+        role: "External Auditor, DEKRA Automotive Certification",
+        age: 61,
+        motive:
+          "Van Houten had certified VW's emissions compliance for seven consecutive years, including the years the defeat device was active. If Breitner testified, Van Houten faced criminal charges for fraudulent certification — plus liability from every European government that relied on his audits.",
+        alibi:
+          "At his home in Düsseldorf — confirmed by his wife. His car was garaged. But a neighbour reports seeing a taxi depart from his address at 10 PM.",
+        secret:
+          "He received €180,000 in 'consultancy fees' from VW over five years, routed through a Liechtenstein shell company he co-owned with a VW procurement officer.",
+        tell:
+          "Insists all certifications were 'process-compliant' — a distinction he draws carefully to separate process from actual emissions truth.",
+        evidence:
+          "🚕 A Wolfsburg taxi company log shows a fare from Düsseldorf Hauptbahnhof to the VW North Gate at 23:15 — paid in cash.",
+        guilty: false,
+      },
+      {
+        name: "ANNA-LISE BREITNER",
+        role: "Thomas Breitner's wife, Secondary School Teacher",
+        age: 36,
+        motive:
+          "Thomas had told Anna-Lise he was going to testify. She had begged him not to — they had two children, she knew the people involved, and she had received a handwritten note through their letterbox three days earlier with the words 'Er soll schweigen.' She had not shown Thomas the note.",
+        alibi:
+          "Home with children — confirmed by a neighbour who dropped off a key at 9 PM. But her car was found the next morning with 40km of unexplained overnight mileage.",
+        secret:
+          "The note she received was not a threat from VW. It was from her brother — also a VW engineer — who feared Thomas's testimony would implicate him too. She had driven to meet her brother that night, and he had convinced her to try to stop Thomas. She did not kill him, but she knows who saw Thomas last.",
+        tell:
+          "She volunteers details about the children's bedtime routines unprompted — overconstructing her alibi for the early evening hours.",
+        evidence:
+          "🚗 Her Volkswagen Golf's internal drive log — a feature she didn't know existed — records a 38km round trip beginning at 22:04.",
+        guilty: true,
+      },
+    ],
+    solution:
+      "ANNA-LISE BREITNER drove to meet Thomas by the canal, intending to convince him to withdraw from cooperation with the DOJ. The argument escalated. She did not plan to kill him. In the struggle over his laptop bag — which contained his encrypted notes — he fell into the canal. She left. She has carried this for years, believing the institution that killed her husband's integrity also killed him. The laptop was never recovered. Without Breitner's testimony, the internal authorisation chain above Kastl was never fully established. VW paid €33 billion in fines globally. Nobody from senior management served prison time in Germany.",
+    realInspiration:
+      "Volkswagen Dieselgate scandal (2015–ongoing). The defeat device (Akustikfunktion) was confirmed in the EA 189 engine. Multiple engineers cooperated with US DOJ proceedings. No senior VW executive was imprisoned in Germany. The full internal authorisation chain has never been publicly disclosed.",
+  },
+  {
+    id: "EUR-02",
+    country: "ITALY",
+    flag: "🇮🇹",
+    title: "LA TERRA DEI FUOCHI",
+    subtitle: "Naples, 2013. The Camorra buried it. Someone found it.",
+    era: "October 2013",
+    setting:
+      "The 'Land of Fires' — the stretch of agricultural land between Naples and Caserta, Campania. A journalist investigating illegal toxic waste dumping by Camorra-linked companies has been found burned in his car near a known dump site. His source, a former Camorra waste logistics coordinator, has disappeared.",
+    victim: {
+      name: "FABIO ESPOSITO",
+      role: "Investigative Journalist, Il Mattino di Napoli",
+      bio: "A 44-year-old journalist who had spent three years documenting the illegal burial of industrial and radioactive waste across 800 hectares of Campanian farmland. His unpublished dossier — which he called 'Il Registro' — contained GPS coordinates of 140 dump sites, the names of 23 companies, and the identity of a Camorra clan coordinator who had agreed to testify. The dossier was not found at the scene. His editor received a partial draft file by anonymous email 48 hours after his death.",
+      clue:
+        "📍 The partial draft references a company code: 'ECOTRANS-7'. This code appears in no public business registry in Italy or the EU — but a cross-reference with Europol's organised crime database links it to three active shell company investigations.",
+    },
+    suspects: [
+      {
+        name: "DON SALVATORE MARCHETTI",
+        role: "Camorra Clan Logistics Coordinator, Casalesi faction",
+        age: 58,
+        motive:
+          "Esposito's source was a former subordinate of Marchetti. If the testimony went public, Marchetti faced life imprisonment and the exposure of a waste operation worth €80M annually. He had ordered journalists warned off before.",
+        alibi:
+          "Under house arrest for an unrelated fraud charge — electronic tag confirmed his location. But house arrest in the Casalesi territory means little. He manages operations by proxy.",
+        secret:
+          "He had already paid a police informant to identify Esposito's source. He knew the source's identity two months before the murder. However, he gave the order to 'scare' Esposito, not kill him — the escalation to murder was unauthorised by him.",
+        tell:
+          "Communicates exclusively through his lawyer and a nephew. When asked direct questions, he responds only with 'non ricordo' — I don't remember.",
+        evidence:
+          "📞 An intercepted call from Marchetti's nephew to an unknown number, three days before the murder: 'Il giornalista deve smettere di scrivere. Definitivamente.'",
+        guilty: false,
+      },
+      {
+        name: "ING. ROBERTO FERRANO",
+        role: "CEO, Ferrano Smaltimenti Industriali SpA",
+        age: 52,
+        motive:
+          "Ferrano's company was one of the 23 named in Esposito's dossier. He had paid the Camorra €4M to handle 'non-conforming waste' disposal over seven years — toxic solvents, asbestos, and undisclosed pharmaceutical byproducts. Criminal liability and company dissolution.",
+        alibi:
+          "Dining with clients at a Naples restaurant — eight witnesses. Left at 23:00. The murder occurred between midnight and 2 AM.",
+        secret:
+          "He had been a protected informant for the DIA (Italy's anti-mafia directorate) for two years, feeding them minor Camorra intelligence in exchange for protection from prosecution. The DIA knew about his waste contracts and had suppressed prosecution to keep him as an asset.",
+        tell:
+          "Very precise about times — gives exact minutes for every alibi moment, which indicates rehearsal rather than genuine recall.",
+        evidence:
+          "🏭 Soil core samples from a site named in the draft dossier match chemical signatures from Ferrano's documented waste manifests — illegally obtained by Esposito.",
+        guilty: false,
+      },
+      {
+        name: "COMMISSARIO ELENA RUSSO",
+        role: "Carabinieri Environmental Crimes Unit, Naples",
+        age: 43,
+        motive:
+          "Russo had been running a parallel investigation into terra dei fuochi for two years. Esposito's imminent publication would blow her operation before she could arrest the full network — and would reveal that she had known about the dump sites for 18 months without acting. Her inaction was professional failure at best, complicity at worst.",
+        alibi:
+          "On duty — shift records confirm. But her unit's patrol log shows a 90-minute unlogged gap between 00:30 and 02:00.",
+        secret:
+          "She had received Esposito's source's identity from a civilian tip six weeks earlier and had not acted on it — because acting would have forced her to disclose the 18-month knowledge gap to her superiors. She feared the source more than the Camorra.",
+        tell:
+          "Answers questions about the night with operational detail — road numbers, weather conditions — suggesting she was there and is describing real observation, not fabrication.",
+        evidence:
+          "🚓 A fuel card transaction places a Carabinieri vehicle at a petrol station 4km from the crime scene at 01:17 — a vehicle assigned to Russo's unit that night.",
+        guilty: false,
+      },
+      {
+        name: "MARCO VITALE",
+        role: "Esposito's Source — former Camorra waste coordinator",
+        age: 39,
+        motive:
+          "Vitale had agreed to testify. But the night before his meeting with Esposito's editor, he received proof that the Camorra knew his identity — which meant Marchetti's people knew Esposito had him. In a panic, Vitale concluded that Esposito had betrayed him. He had not — the leak came from the Carabinieri file. Vitale killed Esposito believing he had been sold out.",
+        alibi:
+          "Claims to have been in Salerno, 60km south, staying at a cousin's apartment. The cousin confirms — but the cousin is his brother-in-law, and phone records show Vitale's mobile in Naples until 01:30.",
+        secret:
+          "He took Il Registro from the car, intending to destroy it, then lost his nerve and sent the partial draft anonymously to the editor — partly out of guilt, partly to deflect suspicion onto the companies named in it.",
+        tell:
+          "When asked about Esposito, he speaks with a grief that is real — but describes the last conversation in too much detail, including the location of the meeting that was never publicly disclosed.",
+        evidence:
+          "🔥 Accelerant residue on Vitale's jacket, detected when Carabinieri searched his car, matches the chemical compound used to ignite Esposito's vehicle.",
+        guilty: true,
+      },
+    ],
+    solution:
+      "MARCO VITALE — Esposito's own source — killed him in a panicked misidentification. Believing Esposito had sold his identity to the Camorra, he intercepted him near the dump site, killed him, took the dossier, and burned the car. The Camorra did not order the murder. Commissario Russo's leaked file — not Esposito — had exposed Vitale. The real culprit of the environmental crime remains the network of companies and the Casalesi clan, operating freely for another four years before partial prosecutions began in 2017. The 140 dump sites were formally identified by the Italian government in 2014. Remediation is still ongoing.",
+    realInspiration:
+      "Terra dei fuochi (Land of Fires), Campania, Italy — documented since the 1990s, formally acknowledged by the Italian government in 2013–2014. Camorra involvement in illegal waste disposal ('ecomafia') has been extensively investigated by the NGO Legambiente. Multiple journalists and anti-mafia activists have been threatened. The sites contain industrial, chemical, and reportedly low-level radioactive waste.",
+  },
+  {
+    id: "EUR-03",
+    country: "ROMANIA",
+    flag: "🇷🇴",
+    title: "ROŞIA MONTANĂ",
+    subtitle: "Transylvania, 2013. Gold. Cyanide. And a referendum that never happened.",
+    era: "September 2013",
+    setting:
+      "Roșia Montană, Alba County, Romania. The government has just fast-tracked parliamentary approval for Gabriel Resources' gold mining project, which would use cyanide leaching to extract gold from Europe's largest open-cast mine — destroying a UNESCO-listed Roman mining heritage site and displacing 2,000 people. A parliamentary aide who had obtained a leaked draft of a secret side agreement between the government and Gabriel Resources is found dead in her Bucharest apartment. The draft is gone.",
+    victim: {
+      name: "IOANA FLORESCU",
+      role: "Parliamentary Aide, Romanian Chamber of Deputies",
+      bio: "A 31-year-old law graduate working for an opposition MP on the Environment Committee. She had obtained — through a source inside the Economy Ministry — a 14-page addendum to the official Gabriel Resources contract, showing the Romanian government had secretly agreed to waive all future environmental liability claims in perpetuity and to suppress a planned 2014 environmental impact referendum. She had photographed the document and emailed the image to one person. Her phone was taken from the scene.",
+      clue:
+        "⚖️ Her browser history, partially recovered from cloud sync, shows she visited the website of the Permanent Court of Arbitration in The Hague — specifically its investor-state dispute section — three times in the week before her death.",
+    },
+    suspects: [
+      {
+        name: "MINISTER GHEORGHE ALDEA",
+        role: "Romanian Minister of Economy and Mining",
+        age: 57,
+        motive:
+          "Aldea had personally negotiated the secret addendum. Its exposure would destroy the parliamentary fast-track vote, trigger EU infringement proceedings, and expose him to corruption charges. He had received political funding from a Gabriel Resources-linked offshore entity.",
+        alibi:
+          "In Bucharest, at a party fundraiser — photographed, timestamped. Left at 23:30. Florescu's estimated time of death: between midnight and 3 AM.",
+        secret:
+          "The funding from Gabriel Resources was routed through a Cypriot holding company in which his son-in-law held a directorship. He was being investigated separately by DIICOT (Romania's anti-corruption directorate) for an unrelated contract — and was using the mining deal as leverage to stay politically protected.",
+        tell:
+          "Responds to questions about the addendum by reframing it as a 'standard investor protection clause' — language that appears verbatim in Gabriel Resources' public investor communications.",
+        evidence:
+          "📄 A printer access log from the Economy Ministry building shows the addendum document was printed at 21:45 on the night Florescu received her leaked copy — from a printer in Aldea's outer office suite.",
+        guilty: false,
+      },
+      {
+        name: "JAMES TOLLIVER",
+        role: "Gabriel Resources VP, European Operations",
+        age: 48,
+        motive:
+          "Gabriel Resources had invested €600M over 15 years. The leak of the addendum would collapse the parliamentary vote, destroy share price, and trigger €4B in investor-state arbitration losses. Tolliver had previously threatened a Romanian journalist's editor by phone over a less significant story.",
+        alibi:
+          "At the Gabriel Resources Bucharest office until 22:00 — keycard log confirms. Claimed to have gone directly to his hotel. CCTV at the hotel shows him checking in at 23:50 — a 110-minute gap for a 15-minute journey.",
+        secret:
+          "He knew Florescu had the document before she died. A Ministry mole had informed him. He had arranged for a private investigator to follow her for four days. He had not ordered her death — but he knew who she had emailed the photograph to.",
+        tell:
+          "Uses the word 'unfortunately' before every answer about Florescu, a tell of performed sympathy over genuine surprise.",
+        evidence:
+          "📸 A private investigator's surveillance photo, found on a recovered hard drive, shows Florescu entering her apartment building at 23:40 — with a second figure behind her, out of frame.",
+        guilty: false,
+      },
+      {
+        name: "DEPUTAT CONSTANTIN MOGA",
+        role: "Opposition MP, Environment Committee (Florescu's employer)",
+        age: 53,
+        motive:
+          "Florescu had not told Moga she had the document. She had emailed it to a journalist directly, bypassing him. Moga had his own parallel negotiations with Gabriel Resources — a secret agreement to withdraw his parliamentary opposition in exchange for a stake in a local subsidiary. Florescu's leak would expose both the addendum and his betrayal of his own party.",
+        alibi:
+          "At his constituency office in Cluj — confirmed by his driver and two staff. However, he had sent his driver home early that evening, and the office's external security camera shows the building dark by 21:00.",
+        secret:
+          "He had been informed of the leaked document by the same Ministry mole who informed Tolliver. He had contacted Gabriel Resources that afternoon to warn them — effectively triggering the sequence of events that led to Florescu's death.",
+        tell:
+          "Expresses outrage about the mining project in public but has never introduced formal legislation to block it — a contradiction he becomes agitated when pressed on.",
+        evidence:
+          "📧 A draft email, unsent, recovered from his parliamentary account: 'She has the annex. She is going to the press. You need to deal with this tonight.'",
+        guilty: false,
+      },
+      {
+        name: "ELENA DĂNILĂ",
+        role: "Economy Ministry Deputy Secretary, Florescu's source",
+        age: 44,
+        motive:
+          "Dănilă had leaked the addendum to Florescu believing she would hand it to her MP employer — giving it political protection. When she learned Florescu had emailed it directly to a journalist, she panicked. A journalist would publish immediately. Dănilă would be identified as the leak source within 24 hours and lose everything: her position, her pension, and her freedom under Romania's state secrecy statutes.",
+        alibi:
+          "At home in Bucharest, alone. No witnesses. Her building's lobby camera shows her leaving at 23:55 and returning at 02:40.",
+        secret:
+          "She had leaked the document not purely out of principle — she was being pressured by a DIICOT contact to produce evidence of ministerial corruption as part of an unrelated investigation. She was herself being coerced. Killing Florescu was an act of terrified self-preservation, not ideology.",
+        tell:
+          "Keeps returning to how much she 'respected' Florescu — an emphasis that reads as guilt management, not genuine tribute.",
+        evidence:
+          "🔑 Florescu's phone, taken from the scene, was found wiped and discarded in a bin two streets from Dănilă's apartment building. Her fingerprints were not on it — but the wipe was performed using a Ministry-issued data destruction protocol only accessible to senior civil servants.",
+        guilty: true,
+      },
+    ],
+    solution:
+      "ELENA DĂNILĂ — the leak source herself — killed Ioana Florescu to retrieve the photographed document and prevent her own identification. She had not anticipated Florescu would bypass her MP and go directly to a journalist. When she learned of this, she went to Florescu's apartment that night to recover the phone. The confrontation turned fatal. She wiped the phone using tools she knew from her Ministry role and disposed of it. The parliamentary vote passed the following week. The project was blocked in 2013 only by mass street protests — the largest in Romania since 1989 — not by legal exposure. Gabriel Resources subsequently sued Romania at the ICSID arbitration court for €4.4 billion, a case still partially active. The mine was never built.",
+    realInspiration:
+      "Roșia Montană Gold Mining Project, Romania (1995–present). Gabriel Resources' attempt to build Europe's largest open-cast gold mine using cyanide leaching. The Romanian government's 2013 fast-track legislation triggered mass protests. The site was granted UNESCO World Heritage status in 2021, effectively blocking the project. Gabriel Resources' €4.4B ICSID arbitration claim against Romania is one of the largest investor-state disputes in European history.",
+  },
+];
+
+const PHASE_LABELS = ["FILES", "BRIEFING", "INVESTIGATION", "ACCUSATION", "VERDICT"];
+
+export default function EuroMysteryGame() {
+  const [screen, setScreen] = useState("home");
+  const [selectedCase, setSelectedCase] = useState(null);
+  const [phase, setPhase] = useState(1);
+  const [openSuspect, setOpenSuspect] = useState(null);
+  const [unlockedEvidence, setUnlockedEvidence] = useState([]);
+  const [unlockedSecrets, setUnlockedSecrets] = useState([]);
+  const [accusation, setAccusation] = useState(null);
+  const [verdict, setVerdict] = useState(null);
+  const [notes, setNotes] = useState("");
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setTick(x => x + 1), 1200);
+    return () => clearInterval(t);
+  }, []);
+
+  const startCase = (c) => {
+    setSelectedCase(c);
+    setPhase(1);
+    setOpenSuspect(null);
+    setUnlockedEvidence([]);
+    setUnlockedSecrets([]);
+    setAccusation(null);
+    setVerdict(null);
+    setNotes("");
+    setScreen("case");
+  };
+
+  const accuse = (name) => {
+    const correct = selectedCase.suspects.find(s => s.name === name)?.guilty;
+    setAccusation(name);
+    setVerdict(correct ? "CORRECT" : "WRONG");
+    setPhase(4);
+  };
+
+  const suspectCount = selectedCase ? selectedCase.suspects.length : 0;
+  const canAccuse = unlockedEvidence.length >= 2;
+
+  // ---- STYLES ----
+  const S = {
+    page: {
+      minHeight: "100vh",
+      background: "#f0ebe0",
+      fontFamily: "'Georgia', 'Times New Roman', serif",
+      color: "#1a1410",
+      position: "relative",
+    },
+    noise: {
+      position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, opacity: 0.06,
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E")`,
+    },
+    header: {
+      background: "#1a1410",
+      borderBottom: "3px solid #8b1a1a",
+      padding: "0 32px",
+      display: "flex", alignItems: "stretch", justifyContent: "space-between",
+      position: "sticky", top: 0, zIndex: 200,
+      minHeight: 56,
+    },
+    headerLeft: {
+      display: "flex", alignItems: "center", gap: 16,
+      borderRight: "1px solid #2a2420",
+      paddingRight: 24, marginRight: 0,
+    },
+    brand: { fontSize: 13, letterSpacing: 4, color: "#c8a060", fontFamily: "'Georgia', serif", fontWeight: "bold" },
+    subBrand: { fontSize: 9, letterSpacing: 6, color: "#6a5a4a", marginTop: 1 },
+    wrap: { maxWidth: 1000, margin: "0 auto", padding: "40px 24px", position: "relative", zIndex: 1 },
+    caseCard: {
+      border: "2px solid #2a2010",
+      background: "#faf6ed",
+      marginBottom: 20,
+      cursor: "pointer",
+      transition: "all 0.15s",
+      position: "relative",
+      overflow: "hidden",
+    },
+    caseCardInner: { padding: "24px 28px 20px" },
+    tag: (color = "#8b1a1a") => ({
+      display: "inline-block", background: color, color: "#f0ebe0",
+      fontSize: 8, letterSpacing: 5, padding: "3px 10px", marginBottom: 10,
+    }),
+    caseTitle: { fontSize: 24, fontWeight: "bold", color: "#1a1410", letterSpacing: 1, margin: "4px 0 2px", lineHeight: 1.15 },
+    caseSub: { fontSize: 13, color: "#6a5040", fontStyle: "italic", marginBottom: 10 },
+    sectionHead: {
+      fontSize: 8, letterSpacing: 7, color: "#8b1a1a", borderBottom: "1px solid #c8a060",
+      paddingBottom: 6, marginBottom: 16, marginTop: 0,
+    },
+    box: (tint = "#faf6ed") => ({
+      border: "1px solid #c8b090", background: tint, padding: "18px 20px", marginBottom: 14,
+    }),
+    suspectCard: (open) => ({
+      border: open ? "2px solid #8b1a1a" : "1px solid #c8b090",
+      background: open ? "#fff8f0" : "#faf6ed",
+      marginBottom: 12,
+      overflow: "hidden",
+      transition: "all 0.15s",
+    }),
+    suspectHeader: {
+      padding: "14px 20px",
+      cursor: "pointer",
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+    },
+    suspectName: { fontSize: 14, fontWeight: "bold", letterSpacing: 2, color: "#1a1410" },
+    suspectRole: { fontSize: 10, color: "#7a6050", letterSpacing: 1, marginTop: 2 },
+    gridTwo: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 },
+    infoBox: (tint) => ({ background: tint, border: "1px solid #c8b090", padding: "12px 14px" }),
+    label: (color = "#8b1a1a") => ({ fontSize: 8, letterSpacing: 5, color, marginBottom: 6, display: "block" }),
+    bodyText: { fontSize: 12, lineHeight: 1.75, color: "#2a1e14", margin: 0 },
+    btn: (variant = "primary") => ({
+      background: variant === "primary" ? "#8b1a1a" : variant === "ghost" ? "transparent" : "#2a1e14",
+      border: variant === "ghost" ? "1px solid #c8b090" : "none",
+      color: variant === "ghost" ? "#6a5040" : "#f0ebe0",
+      padding: variant === "sm" ? "8px 18px" : "13px 28px",
+      cursor: "pointer", fontSize: 10, letterSpacing: 4,
+      fontFamily: "'Georgia', serif",
+      transition: "all 0.15s",
+    }),
+    verdictBox: (correct) => ({
+      border: `3px double ${correct ? "#2a6a2a" : "#8b1a1a"}`,
+      background: correct ? "#f0faf0" : "#faf0f0",
+      padding: "32px", textAlign: "center", marginBottom: 28,
+    }),
+  };
+
+  return (
+    <div style={S.page}>
+      <div style={S.noise} />
+
+      {/* HEADER */}
+      <div style={S.header}>
+        <div style={S.headerLeft}>
+          <div>
+            <div style={S.brand}>DOSSIER EUROPA</div>
+            <div style={S.subBrand}>ENVIRONMENTAL CRIMES ARCHIVE</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          {screen === "case" && PHASE_LABELS.slice(1).map((p, i) => (
+            <div key={p} style={{
+              fontSize: 8, letterSpacing: 4,
+              color: phase >= i + 1 ? "#c8a060" : "#3a2a20",
+              borderBottom: phase === i + 1 ? "2px solid #8b1a1a" : "2px solid transparent",
+              padding: "18px 4px 16px",
+            }}>{p}</div>
+          ))}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {screen === "case" && (
+            <button
+              onClick={() => setNotesOpen(o => !o)}
+              style={{ ...S.btn("ghost"), fontSize: 9, padding: "6px 14px" }}
+            >
+              {notesOpen ? "✕ NOTES" : "✎ NOTES"}
+            </button>
+          )}
+          {screen === "case" && (
+            <button
+              onClick={() => setScreen("home")}
+              style={{ ...S.btn("ghost"), fontSize: 9, padding: "6px 14px" }}
+            >← ALL CASES</button>
+          )}
+        </div>
+      </div>
+
+      {/* NOTES PANEL */}
+      {notesOpen && screen === "case" && (
+        <div style={{
+          position: "fixed", right: 0, top: 56, bottom: 0, width: 280,
+          background: "#fdf8ef", borderLeft: "2px solid #8b1a1a", zIndex: 150,
+          display: "flex", flexDirection: "column",
+        }}>
+          <div style={{ padding: "14px 16px", borderBottom: "1px solid #c8b090" }}>
+            <div style={{ fontSize: 8, letterSpacing: 5, color: "#8b1a1a" }}>INVESTIGATOR'S NOTES</div>
+          </div>
+          <textarea
+            value={notes}
+            onChange={e => setNotes(e.target.value)}
+            placeholder={"Jot suspects, contradictions,\nalibi gaps, evidence links...\n\n─────────────────"}
+            style={{
+              flex: 1, background: "transparent", border: "none", outline: "none",
+              padding: "16px", fontSize: 12, fontFamily: "'Georgia', serif",
+              color: "#2a1e14", lineHeight: 1.8, resize: "none",
+            }}
+          />
+        </div>
+      )}
+
+      <div style={{ ...S.wrap, paddingRight: notesOpen && screen === "case" ? 304 : 24 }}>
+
+        {/* ═══════════ HOME ═══════════ */}
+        {screen === "home" && (
+          <div>
+            <div style={{ marginBottom: 48 }}>
+              <div style={{ ...S.tag(), marginBottom: 12 }}>CLASSIFIED ARCHIVE · EU ENVIRONMENTAL CRIMES DIVISION</div>
+              <h1 style={{ fontSize: 42, fontWeight: "bold", letterSpacing: 1, margin: "0 0 10px", lineHeight: 1.05, color: "#1a1410" }}>
+                DOSSIER<br />EUROPA
+              </h1>
+              <div style={{ width: 60, height: 3, background: "#8b1a1a", margin: "12px 0 16px" }} />
+              <p style={{ maxWidth: 560, fontSize: 14, lineHeight: 1.85, color: "#4a3828", fontStyle: "italic" }}>
+                Three unsolved deaths. Three of Europe's most consequential environmental scandals. The institutions survived. The truth did not. Your task is to find who pulled the trigger — before the dossier is sealed.
+              </p>
+            </div>
+
+            <div>
+              {CASES.map((c, i) => (
+                <div
+                  key={c.id}
+                  style={S.caseCard}
+                  onClick={() => startCase(c)}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#fff8f0"; e.currentTarget.style.borderColor = "#8b1a1a"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "#faf6ed"; e.currentTarget.style.borderColor = "#2a2010"; }}
+                >
+                  <div style={{
+                    position: "absolute", top: 0, left: 0, bottom: 0, width: 5,
+                    background: ["#8b1a1a", "#2a4a8b", "#2a6a2a"][i],
+                  }} />
+                  <div style={{ ...S.caseCardInner, paddingLeft: 32 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
+                          <span style={{ fontSize: 22 }}>{c.flag}</span>
+                          <span style={{ ...S.tag(["#8b1a1a","#2a4a8b","#2a6a2a"][i]), marginBottom: 0 }}>{c.country} · {c.era}</span>
+                          <span style={{ fontSize: 8, letterSpacing: 4, color: "#9a8a7a" }}>CASE {c.id}</span>
+                        </div>
+                        <div style={S.caseTitle}>{c.title}</div>
+                        <div style={S.caseSub}>{c.subtitle}</div>
+                        <div style={{ fontSize: 12, color: "#5a4838", lineHeight: 1.7, maxWidth: 620 }}>{c.setting.slice(0, 180)}…</div>
+                      </div>
+                      <div style={{ marginLeft: 24, textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontSize: 9, color: "#9a8a7a", letterSpacing: 3, marginBottom: 4 }}>{c.suspects.length} SUSPECTS</div>
+                        <div style={{ fontSize: 36, opacity: 0.15 }}>⚖</div>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid #d8c8a8", fontSize: 10, color: "#9a7a5a", letterSpacing: 2 }}>
+                      INSPIRED BY // {c.realInspiration.slice(0, 90)}…
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════ CASE SCREEN ═══════════ */}
+        {screen === "case" && selectedCase && (
+          <div>
+            {/* BRIEFING */}
+            {phase === 1 && (
+              <div>
+                <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
+                  <span style={{ fontSize: 24 }}>{selectedCase.flag}</span>
+                  <div>
+                    <div style={{ ...S.tag(), marginBottom: 2 }}>CASE {selectedCase.id} · {selectedCase.country}</div>
+                    <h2 style={{ fontSize: 30, fontWeight: "bold", margin: 0, letterSpacing: 1 }}>{selectedCase.title}</h2>
+                    <div style={{ fontSize: 14, fontStyle: "italic", color: "#6a5040", marginTop: 2 }}>{selectedCase.subtitle}</div>
+                  </div>
+                </div>
+
+                <div style={{ width: "100%", height: 2, background: "linear-gradient(to right, #8b1a1a, transparent)", marginBottom: 28 }} />
+
+                <div style={S.box("#fff8f0")}>
+                  <p style={{ ...S.label(), marginBottom: 10 }}>▸ SCENE OF THE CRIME</p>
+                  <p style={{ ...S.bodyText, fontSize: 13 }}>{selectedCase.setting}</p>
+                </div>
+
+                <div style={{ ...S.box("#fdf0e8"), border: "2px solid #8b1a1a" }}>
+                  <p style={S.label()}>☠ THE VICTIM</p>
+                  <div style={{ display: "flex", gap: 20, alignItems: "flex-start" }}>
+                    <div style={{
+                      width: 72, height: 72, border: "2px solid #8b1a1a", flexShrink: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 28, background: "#f0ebe0",
+                    }}>💀</div>
+                    <div>
+                      <div style={{ fontSize: 18, fontWeight: "bold", letterSpacing: 2, marginBottom: 2 }}>{selectedCase.victim.name}</div>
+                      <div style={{ fontSize: 10, letterSpacing: 3, color: "#8b1a1a", marginBottom: 10 }}>{selectedCase.victim.role}</div>
+                      <p style={{ ...S.bodyText, marginBottom: 12 }}>{selectedCase.victim.bio}</p>
+                      <div style={{ background: "#f0ebe0", border: "1px dashed #c8a060", padding: "10px 14px", fontSize: 12, color: "#5a3a18" }}>
+                        <span style={S.label("#c8a060")}>KEY DETAIL FOR INVESTIGATORS</span>
+                        {selectedCase.victim.clue}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <button style={S.btn("primary")} onClick={() => setPhase(2)}>
+                  COMMENCE INVESTIGATION →
+                </button>
+              </div>
+            )}
+
+            {/* INVESTIGATION */}
+            {phase === 2 && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
+                  <div>
+                    <div style={{ ...S.tag(), marginBottom: 6 }}>INVESTIGATION ACTIVE · {selectedCase.id}</div>
+                    <h2 style={{ fontSize: 22, fontWeight: "bold", margin: 0, letterSpacing: 1 }}>{selectedCase.title}</h2>
+                  </div>
+                  <div style={{ fontSize: 10, color: "#8b1a1a", letterSpacing: 3 }}>
+                    {unlockedEvidence.length}/{suspectCount} EVIDENCE FILES OPENED
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 24 }}>
+                  {selectedCase.suspects.map((s, i) => {
+                    const isOpen = openSuspect === i;
+                    const hasEvidence = unlockedEvidence.includes(i);
+                    const hasSecret = unlockedSecrets.includes(i);
+                    return (
+                      <div key={i} style={S.suspectCard(isOpen)}>
+                        <div style={S.suspectHeader} onClick={() => setOpenSuspect(isOpen ? null : i)}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                            <div style={{
+                              width: 40, height: 40, border: `2px solid ${isOpen ? "#8b1a1a" : "#c8b090"}`,
+                              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, background: "#f0ebe0",
+                            }}>
+                              {["🧑‍💼","👩‍⚖️","🕵","👩‍💻"][i] || "🧑"}
+                            </div>
+                            <div>
+                              <div style={S.suspectName}>{s.name}</div>
+                              <div style={S.suspectRole}>{s.role} · Age {s.age}</div>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            {hasEvidence && <span style={{ fontSize: 8, letterSpacing: 3, color: "#2a6a2a", border: "1px solid #2a6a2a", padding: "2px 8px" }}>EVIDENCE ✓</span>}
+                            {hasSecret && <span style={{ fontSize: 8, letterSpacing: 3, color: "#8b1a1a", border: "1px solid #8b1a1a", padding: "2px 8px" }}>SECRET ✓</span>}
+                            <span style={{ fontSize: 11, color: "#c8a060" }}>{isOpen ? "▲" : "▼"}</span>
+                          </div>
+                        </div>
+
+                        {isOpen && (
+                          <div style={{ padding: "0 20px 20px" }}>
+                            <div style={{ borderTop: "1px solid #d8c8a8", paddingTop: 16 }} />
+                            <div style={S.gridTwo}>
+                              <div style={S.infoBox("#fff4e8")}>
+                                <span style={S.label("#c8640a")}>MOTIVE</span>
+                                <p style={S.bodyText}>{s.motive}</p>
+                              </div>
+                              <div style={S.infoBox("#e8f0ff")}>
+                                <span style={S.label("#2a4a8b")}>ALIBI</span>
+                                <p style={S.bodyText}>{s.alibi}</p>
+                              </div>
+                            </div>
+                            <div style={{ ...S.infoBox("#f8f4e8"), marginBottom: 14 }}>
+                              <span style={S.label("#8b6a1a")}>BEHAVIOURAL TELL</span>
+                              <p style={{ ...S.bodyText, fontStyle: "italic" }}>"{s.tell}"</p>
+                            </div>
+                            <div style={{ display: "flex", gap: 10 }}>
+                              <button
+                                onClick={() => setUnlockedEvidence(prev => prev.includes(i) ? prev : [...prev, i])}
+                                style={{
+                                  ...S.btn(hasEvidence ? "ghost" : "dark"),
+                                  fontSize: 9, padding: "9px 16px",
+                                  opacity: hasEvidence ? 0.7 : 1,
+                                }}
+                              >
+                                {hasEvidence ? "✓ EVIDENCE EXAMINED" : "🔍 EXAMINE EVIDENCE"}
+                              </button>
+                              <button
+                                onClick={() => setUnlockedSecrets(prev => prev.includes(i) ? prev : [...prev, i])}
+                                style={{ ...S.btn("ghost"), fontSize: 9, padding: "9px 16px" }}
+                              >
+                                {hasSecret ? "✓ SECRET REVEALED" : "🗃 DIG DEEPER"}
+                              </button>
+                            </div>
+                            {hasEvidence && (
+                              <div style={{ ...S.infoBox("#fff0e0"), marginTop: 12, border: "1px dashed #c87a1a" }}>
+                                <span style={S.label("#c87a1a")}>PHYSICAL EVIDENCE</span>
+                                <p style={S.bodyText}>{s.evidence}</p>
+                              </div>
+                            )}
+                            {hasSecret && (
+                              <div style={{ ...S.infoBox("#fef0f0"), marginTop: hasEvidence ? 0 : 12, border: "1px dashed #8b1a1a", marginTop: 10 }}>
+                                <span style={S.label("#8b1a1a")}>HIDDEN SECRET</span>
+                                <p style={S.bodyText}>{s.secret}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* ACCUSATION PANEL */}
+                {canAccuse ? (
+                  <div style={{ ...S.box("#fdf0f0"), border: "2px solid #8b1a1a" }}>
+                    <p style={S.label()}>⚖ FORMAL ACCUSATION</p>
+                    <p style={{ fontSize: 12, color: "#5a3020", marginBottom: 16, lineHeight: 1.7 }}>
+                      You have reviewed sufficient evidence. One accusation. No appeals. The full weight of your investigation rests on this choice.
+                    </p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                      {selectedCase.suspects.map((s, i) => (
+                        <button key={i} onClick={() => accuse(s.name)} style={{
+                          background: "#faf6ed", border: "1px solid #8b1a1a", color: "#2a1410",
+                          padding: "12px 16px", cursor: "pointer", fontSize: 11, letterSpacing: 1,
+                          textAlign: "left", fontFamily: "'Georgia', serif",
+                          transition: "all 0.15s",
+                        }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "#8b1a1a"; e.currentTarget.style.color = "#f0ebe0"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "#faf6ed"; e.currentTarget.style.color = "#2a1410"; }}
+                        >
+                          ▸ {s.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ ...S.box("#f8f6f0"), textAlign: "center" }}>
+                    <p style={{ fontSize: 11, color: "#9a8a7a", letterSpacing: 3 }}>
+                      EXAMINE AT LEAST {2 - unlockedEvidence.length} MORE EVIDENCE FILE{2 - unlockedEvidence.length !== 1 ? "S" : ""} TO PROCEED TO ACCUSATION
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* VERDICT */}
+            {phase === 4 && (
+              <div>
+                <div style={S.verdictBox(verdict === "CORRECT")}>
+                  <div style={{ fontSize: 52, marginBottom: 12 }}>{verdict === "CORRECT" ? "⚖" : "✗"}</div>
+                  <div style={{ fontSize: 9, letterSpacing: 8, color: verdict === "CORRECT" ? "#2a6a2a" : "#8b1a1a", marginBottom: 10 }}>
+                    {verdict === "CORRECT" ? "ACCUSATION SUSTAINED" : "ACCUSATION REJECTED"}
+                  </div>
+                  <h2 style={{ fontSize: 26, fontWeight: "bold", letterSpacing: 1, margin: "0 0 6px", color: verdict === "CORRECT" ? "#1a4a1a" : "#6a1010" }}>
+                    {verdict === "CORRECT" ? `${accusation}` : `${accusation} WAS INNOCENT`}
+                  </h2>
+                  {verdict === "CORRECT" && <p style={{ color: "#2a6a2a", fontSize: 13 }}>Your accusation was correct. The case is closed — for the murder. The environmental crime continues.</p>}
+                  {verdict === "WRONG" && (
+                    <p style={{ color: "#6a2a2a", fontSize: 13 }}>
+                      The actual perpetrator: <strong>{selectedCase.suspects.find(s => s.guilty)?.name}</strong>
+                    </p>
+                  )}
+                </div>
+
+                <div style={{ ...S.box("#fdf8f0"), marginBottom: 16 }}>
+                  <p style={S.label()}>📁 FULL CASE RESOLUTION</p>
+                  <p style={{ ...S.bodyText, fontSize: 13 }}>{selectedCase.solution}</p>
+                </div>
+
+                <div style={{ ...S.box("#faf6ed"), marginBottom: 16 }}>
+                  <p style={S.label("#2a1e14")}>🗃 WHAT EVERY SUSPECT WAS CONCEALING</p>
+                  {selectedCase.suspects.map((s, i) => (
+                    <div key={i} style={{ display: "flex", gap: 16, padding: "10px 0", borderBottom: i < selectedCase.suspects.length - 1 ? "1px solid #d8c8a8" : "none" }}>
+                      <div style={{ width: 180, flexShrink: 0, fontSize: 10, fontWeight: "bold", letterSpacing: 1, color: "#5a3828", paddingTop: 2 }}>
+                        {s.name} {s.guilty && <span style={{ color: "#8b1a1a" }}>★ GUILTY</span>}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#4a3828", lineHeight: 1.65 }}>{s.secret}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ ...S.box("#f0f4ff"), border: "1px solid #8090c0", marginBottom: 24 }}>
+                  <p style={{ ...S.label("#2a4a8b") }}>📚 HISTORICAL RECORD</p>
+                  <p style={{ ...S.bodyText, fontSize: 12 }}>{selectedCase.realInspiration}</p>
+                </div>
+
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button style={S.btn("primary")} onClick={() => setScreen("home")}>← RETURN TO ARCHIVE</button>
+                  <button style={S.btn("ghost")} onClick={() => {
+                    setPhase(1); setOpenSuspect(null); setUnlockedEvidence([]); setUnlockedSecrets([]);
+                    setAccusation(null); setVerdict(null);
+                  }}>↺ RETRY CASE</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* footer */}
+      <div style={{
+        borderTop: "1px solid #d8c8a8", padding: "14px 32px", textAlign: "center",
+        fontSize: 9, color: "#a89a8a", letterSpacing: 4, background: "#f0ebe0",
+        position: "relative", zIndex: 1,
+      }}>
+        ALL CASES INSPIRED BY DOCUMENTED EUROPEAN ENVIRONMENTAL CRIMES — CHARACTERS FICTIONALISED — © DOSSIER EUROPA
+      </div>
+    </div>
+  );
+}
