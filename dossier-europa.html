@@ -1,26 +1,810 @@
 <!DOCTYPE html>
-<html(lang="en")>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Investigation Game - Dossier Europa</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The European Files — Environmental Crimes Archive</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  body {
+    min-height: 100vh;
+    background: #f0ebe0;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: #1a1410;
+  }
+ 
+  /* NOISE */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0; opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+ 
+  /* HEADER */
+  #site-header {
+    background: #1a1410;
+    border-bottom: 3px solid #8b1a1a;
+    padding: 0 28px;
+    display: flex; align-items: stretch; justify-content: space-between;
+    position: sticky; top: 0; z-index: 200; min-height: 56px;
+  }
+  .header-brand { display: flex; align-items: center; gap: 14px; border-right: 1px solid #2a2420; padding-right: 20px; }
+  .brand-title { font-size: 13px; letter-spacing: 4px; color: #c8a060; font-weight: bold; }
+  .brand-sub { font-size: 9px; letter-spacing: 5px; color: #6a5a4a; margin-top: 2px; }
+  .header-phases { display: flex; align-items: center; gap: 20px; }
+  .phase-pip { font-size: 8px; letter-spacing: 4px; color: #3a2a20; padding: 18px 4px 16px; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .phase-pip.active { color: #c8a060; border-bottom-color: #8b1a1a; }
+  .phase-pip.done { color: #7a6040; }
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .btn-ghost-sm { background: transparent; border: 1px solid #4a3a2a; color: #8a7060; padding: 6px 14px; cursor: pointer; font-size: 9px; letter-spacing: 3px; font-family: 'Georgia', serif; transition: all 0.15s; }
+  .btn-ghost-sm:hover { background: rgba(200,160,96,0.1); color: #c8a060; }
+ 
+  /* WRAP */
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 24px; position: relative; z-index: 1; }
+  .wrap.notes-open { padding-right: 300px; }
+ 
+  /* NOTES PANEL */
+  #notes-panel {
+    position: fixed; right: 0; top: 56px; bottom: 0; width: 272px;
+    background: #fdf8ef; border-left: 2px solid #8b1a1a; z-index: 150;
+    display: none; flex-direction: column;
+  }
+  #notes-panel.open { display: flex; }
+  .notes-head { padding: 14px 16px; border-bottom: 1px solid #c8b090; font-size: 8px; letter-spacing: 5px; color: #8b1a1a; }
+  #notes-text { flex: 1; background: transparent; border: none; outline: none; padding: 16px; font-size: 12px; font-family: 'Georgia', serif; color: #2a1e14; line-height: 1.8; resize: none; }
+ 
+  /* TAGS */
+  .tag { display: inline-block; background: #8b1a1a; color: #f0ebe0; font-size: 8px; letter-spacing: 5px; padding: 3px 10px; margin-bottom: 10px; }
+  .tag.blue { background: #2a4a8b; }
+  .tag.green { background: #2a6a2a; }
+ 
+  /* DIVIDER */
+  .red-rule { width: 100%; height: 2px; background: linear-gradient(to right, #8b1a1a, transparent); margin-bottom: 28px; }
+ 
+  /* BOXES */
+  .box { border: 1px solid #c8b090; background: #faf6ed; padding: 18px 20px; margin-bottom: 14px; }
+  .box.cream { background: #fff8f0; }
+  .box.red-border { border: 2px solid #8b1a1a; background: #fdf0e8; }
+  .box.red-accent { border: 2px solid #8b1a1a; background: #fdf0f0; }
+  .box.clue { background: #f0ebe0; border: 1px dashed #c8a060; padding: 10px 14px; margin-top: 12px; }
+  .box.evidence { background: #fff0e0; border: 1px dashed #c87a1a; margin-top: 12px; }
+  .box.secret { background: #fef0f0; border: 1px dashed #8b1a1a; margin-top: 10px; }
+  .box.motive { background: #fff4e8; }
+  .box.alibi { background: #e8f0ff; }
+  .box.tell { background: #f8f4e8; }
+  .box.solution { background: #fdf8f0; }
+  .box.secrets-all { background: #faf6ed; }
+  .box.history { background: #f0f4ff; border: 1px solid #8090c0; }
+  .box.verdict-correct { border: 3px double #2a6a2a; background: #f0faf0; text-align: center; padding: 32px; margin-bottom: 28px; }
+  .box.verdict-wrong { border: 3px double #8b1a1a; background: #faf0f0; text-align: center; padding: 32px; margin-bottom: 28px; }
+ 
+  .section-label { font-size: 8px; letter-spacing: 7px; color: #8b1a1a; border-bottom: 1px solid #c8a060; padding-bottom: 6px; margin-bottom: 16px; display: block; }
+  .section-label.blue { color: #2a4a8b; border-color: #8090c0; }
+  .section-label.brown { color: #2a1e14; border-color: #c8b090; }
+  .section-label.gold { color: #8b6a1a; border-color: #c8a860; }
+  .section-label.orange { color: #c87a1a; border-color: #d8a060; }
+  .mini-label { font-size: 8px; letter-spacing: 5px; display: block; margin-bottom: 6px; }
+  .mini-label.red { color: #8b1a1a; }
+  .mini-label.blue { color: #2a4a8b; }
+  .mini-label.gold { color: #8b6a1a; }
+  .mini-label.orange { color: #c87a1a; }
+ 
+  /* TYPOGRAPHY */
+  h1 { font-size: 42px; font-weight: bold; letter-spacing: 1px; line-height: 1.05; color: #1a1410; }
+  h2.case-title { font-size: 24px; font-weight: bold; color: #1a1410; letter-spacing: 1px; margin: 4px 0 2px; line-height: 1.15; }
+  h2.section-h2 { font-size: 22px; font-weight: bold; margin: 0; letter-spacing: 1px; }
+  .case-subtitle { font-size: 13px; color: #6a5040; font-style: italic; margin-bottom: 10px; }
+  .body-text { font-size: 12px; line-height: 1.75; color: #2a1e14; }
+  .body-text-lg { font-size: 13px; line-height: 1.8; color: #2a1e14; }
+ 
+  /* HOME — case list */
+  .case-card { border: 2px solid #2a2010; background: #faf6ed; margin-bottom: 20px; cursor: pointer; transition: all 0.15s; position: relative; overflow: hidden; }
+  .case-card:hover { background: #fff8f0; border-color: #8b1a1a; }
+  .case-card-stripe { position: absolute; top: 0; left: 0; bottom: 0; width: 5px; }
+  .case-card-inner { padding: 24px 28px 20px 32px; }
+  .case-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .case-card-meta { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+  .case-id { font-size: 8px; letter-spacing: 4px; color: #9a8a7a; }
+  .case-preview { font-size: 12px; color: #5a4838; line-height: 1.7; max-width: 620px; }
+  .case-suspects-count { font-size: 9px; color: #9a8a7a; letter-spacing: 3px; margin-bottom: 4px; }
+  .case-card-footer { margin-top: 14px; padding-top: 12px; border-top: 1px solid #d8c8a8; font-size: 10px; color: #9a7a5a; letter-spacing: 2px; }
+ 
+  /* VICTIM BLOCK */
+  .victim-flex { display: flex; gap: 20px; align-items: flex-start; }
+  .victim-icon { width: 72px; height: 72px; border: 2px solid #8b1a1a; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 28px; background: #f0ebe0; }
+  .victim-name { font-size: 18px; font-weight: bold; letter-spacing: 2px; margin-bottom: 2px; }
+  .victim-role { font-size: 10px; letter-spacing: 3px; color: #8b1a1a; margin-bottom: 10px; }
+ 
+  /* SUSPECT CARDS */
+  .suspect-card { border: 1px solid #c8b090; background: #faf6ed; margin-bottom: 12px; overflow: hidden; transition: all 0.15s; }
+  .suspect-card.open { border: 2px solid #8b1a1a; background: #fff8f0; }
+  .suspect-header { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+  .suspect-header:hover { background: rgba(139,26,26,0.04); }
+  .suspect-avatar { width: 40px; height: 40px; border: 2px solid #c8b090; display: flex; align-items: center; justify-content: center; font-size: 18px; background: #f0ebe0; flex-shrink: 0; transition: border-color 0.15s; }
+  .suspect-card.open .suspect-avatar { border-color: #8b1a1a; }
+  .suspect-info { margin-left: 16px; }
+  .suspect-name { font-size: 14px; font-weight: bold; letter-spacing: 2px; color: #1a1410; }
+  .suspect-role { font-size: 10px; color: #7a6050; letter-spacing: 1px; margin-top: 2px; }
+  .suspect-badges { display: flex; gap: 8px; align-items: center; }
+  .badge { font-size: 8px; letter-spacing: 3px; padding: 2px 8px; }
+  .badge.evidence { color: #2a6a2a; border: 1px solid #2a6a2a; }
+  .badge.secret { color: #8b1a1a; border: 1px solid #8b1a1a; }
+  .chevron { font-size: 11px; color: #c8a060; margin-left: 8px; transition: transform 0.2s; }
+  .suspect-card.open .chevron { transform: rotate(180deg); }
+  .suspect-body { padding: 0 20px 20px; display: none; }
+  .suspect-card.open .suspect-body { display: block; }
+  .suspect-divider { border: none; border-top: 1px solid #d8c8a8; margin-bottom: 16px; }
+  .grid-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .suspect-actions { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+ 
+  /* BUTTONS */
+  .btn-primary { background: #8b1a1a; border: none; color: #f0ebe0; padding: 13px 28px; cursor: pointer; font-size: 10px; letter-spacing: 4px; font-family: 'Georgia', serif; transition: all 0.15s; }
+  .btn-primary:hover { background: #a02020; }
+  .btn-dark { background: #2a1e14; border: none; color: #f0ebe0; padding: 9px 18px; cursor: pointer; font-size: 9px; letter-spacing: 3px; font-family: 'Georgia', serif; transition: all 0.15s; }
+  .btn-dark:hover { background: #3a2e24; }
+  .btn-ghost { background: transparent; border: 1px solid #c8b090; color: #6a5040; padding: 9px 18px; cursor: pointer; font-size: 9px; letter-spacing: 3px; font-family: 'Georgia', serif; transition: all 0.15s; }
+  .btn-ghost:hover { background: rgba(200,176,144,0.15); }
+  .btn-ghost.lg { padding: 13px 28px; font-size: 10px; letter-spacing: 4px; }
+  .btn-accuse { background: #faf6ed; border: 1px solid #8b1a1a; color: #2a1410; padding: 12px 16px; cursor: pointer; font-size: 11px; letter-spacing: 1px; text-align: left; font-family: 'Georgia', serif; transition: all 0.15s; width: 100%; }
+  .btn-accuse:hover { background: #8b1a1a; color: #f0ebe0; }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+ 
+  /* ACCUSATION GRID */
+  .accuse-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+ 
+  /* ACCUSATION GATE */
+  .gate-msg { font-size: 11px; color: #9a8a7a; letter-spacing: 3px; text-align: center; }
+ 
+  /* VERDICT */
+  .verdict-icon { font-size: 52px; margin-bottom: 12px; }
+  .verdict-status { font-size: 9px; letter-spacing: 8px; margin-bottom: 10px; }
+  .verdict-name { font-size: 26px; font-weight: bold; letter-spacing: 1px; margin: 0 0 6px; }
+  .verdict-msg { font-size: 13px; }
+ 
+  /* SECRETS TABLE */
+  .secrets-row { display: flex; gap: 16px; padding: 10px 0; border-bottom: 1px solid #d8c8a8; }
+  .secrets-row:last-child { border-bottom: none; }
+  .secrets-who { width: 180px; flex-shrink: 0; font-size: 10px; font-weight: bold; letter-spacing: 1px; color: #5a3828; padding-top: 2px; }
+  .secrets-what { font-size: 12px; color: #4a3828; line-height: 1.65; }
+  .guilty-star { color: #8b1a1a; }
+ 
+  /* FOOTER */
+  #site-footer { border-top: 1px solid #d8c8a8; padding: 14px 32px; text-align: center; font-size: 9px; color: #a89a8a; letter-spacing: 4px; background: #f0ebe0; position: relative; z-index: 1; }
+ 
+  /* SCREENS */
+  .screen { display: none; }
+  .screen.active { display: block; }
+ 
+  /* RESPONSIVE */
+  @media (max-width: 640px) {
+    h1 { font-size: 28px; }
+    .grid-two { grid-template-columns: 1fr; }
+    .accuse-grid { grid-template-columns: 1fr; }
+    .wrap { padding: 24px 16px; }
+    .wrap.notes-open { padding-right: 16px; }
+    #notes-panel { display: none !important; }
+    .header-phases { display: none; }
+  }
+</style>
 </head>
 <body>
-    <h1>Welcome to the Interactive Investigation Game</h1>
-    <p>Your mission is to explore the mysterious land of Europa and gather clues to solve the puzzles that lie ahead!</p>
-
-    <h2>Instructions</h2>
-    <p>Follow the prompts and choose your path wisely. Each decision you make will lead you closer to the truth or deeper into the mystery.</p>
-
-    <h2>Game Start</h2>
-    <button onclick="startGame()">Start Game</button>
-
-    <script>
-        function startGame() {
-            // Game logic goes here
-            alert('Game is starting!');
-            // Initialize game state and variables
-        }
-    </script>
+ 
+<!-- HEADER -->
+<header id="site-header">
+  <div class="header-brand">
+    <div>
+      <div class="brand-title">DOSSIER EUROPA</div>
+      <div class="brand-sub">ENVIRONMENTAL CRIMES ARCHIVE</div>
+    </div>
+  </div>
+  <div class="header-phases" id="phase-pips" style="display:none">
+    <div class="phase-pip" data-phase="1">BRIEFING</div>
+    <div class="phase-pip" data-phase="2">INVESTIGATION</div>
+    <div class="phase-pip" data-phase="3">ACCUSATION</div>
+    <div class="phase-pip" data-phase="4">VERDICT</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn-ghost-sm" id="notes-toggle" style="display:none">✎ NOTES</button>
+    <button class="btn-ghost-sm" id="back-btn" style="display:none">← ALL CASES</button>
+  </div>
+</header>
+ 
+<!-- NOTES PANEL -->
+<div id="notes-panel">
+  <div class="notes-head">INVESTIGATOR'S NOTES</div>
+  <textarea id="notes-text" placeholder="Jot suspects, contradictions,&#10;alibi gaps, evidence links...&#10;&#10;─────────────────"></textarea>
+</div>
+ 
+<!-- MAIN -->
+<main>
+ 
+  <!-- ══════════════ HOME SCREEN ══════════════ -->
+  <div id="screen-home" class="screen active">
+    <div class="wrap" id="home-wrap">
+      <div style="margin-bottom:48px">
+        <div class="tag" style="margin-bottom:12px">CLASSIFIED ARCHIVE · EU ENVIRONMENTAL CRIMES DIVISION</div>
+        <h1>DOSSIER<br>EUROPA</h1>
+        <div style="width:60px;height:3px;background:#8b1a1a;margin:12px 0 16px"></div>
+        <p style="max-width:560px;font-size:14px;line-height:1.85;color:#4a3828;font-style:italic">
+          Three unsolved deaths. Three of Europe's most consequential environmental scandals. The institutions survived. The truth did not. Your task is to find who pulled the trigger — before the dossier is sealed.
+        </p>
+      </div>
+      <div id="case-list"></div>
+    </div>
+  </div>
+ 
+  <!-- ══════════════ CASE SCREEN ══════════════ -->
+  <div id="screen-case" class="screen">
+    <div class="wrap" id="case-wrap">
+ 
+      <!-- BRIEFING -->
+      <div id="phase-briefing" class="screen">
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
+          <span id="brief-flag" style="font-size:24px"></span>
+          <div>
+            <div id="brief-tag" class="tag" style="margin-bottom:2px"></div>
+            <h2 id="brief-title" style="font-size:30px;font-weight:bold;margin:0;letter-spacing:1px"></h2>
+            <div id="brief-subtitle" class="case-subtitle" style="margin-top:2px"></div>
+          </div>
+        </div>
+        <div class="red-rule"></div>
+        <div class="box cream" style="margin-bottom:14px">
+          <span class="section-label">▸ SCENE OF THE CRIME</span>
+          <p id="brief-setting" class="body-text-lg"></p>
+        </div>
+        <div class="box red-border" style="margin-bottom:24px">
+          <span class="section-label">☠ THE VICTIM</span>
+          <div class="victim-flex">
+            <div class="victim-icon">💀</div>
+            <div>
+              <div id="victim-name" class="victim-name"></div>
+              <div id="victim-role" class="victim-role"></div>
+              <p id="victim-bio" class="body-text" style="margin-bottom:12px"></p>
+              <div class="box clue">
+                <span class="mini-label gold">KEY DETAIL FOR INVESTIGATORS</span>
+                <span id="victim-clue" class="body-text"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="setPhase(2)">COMMENCE INVESTIGATION →</button>
+      </div>
+ 
+      <!-- INVESTIGATION -->
+      <div id="phase-investigation" class="screen">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;flex-wrap:wrap;gap:8px">
+          <div>
+            <div id="inv-tag" class="tag" style="margin-bottom:6px"></div>
+            <h2 id="inv-title" class="section-h2"></h2>
+          </div>
+          <div id="evidence-counter" style="font-size:10px;color:#8b1a1a;letter-spacing:3px"></div>
+        </div>
+        <div id="suspect-list" style="margin-bottom:24px"></div>
+        <div id="accusation-area"></div>
+      </div>
+ 
+      <!-- VERDICT -->
+      <div id="phase-verdict" class="screen">
+        <div id="verdict-box"></div>
+        <div id="verdict-solution" class="box solution" style="margin-bottom:16px">
+          <span class="section-label">📁 FULL CASE RESOLUTION</span>
+          <p id="solution-text" class="body-text-lg"></p>
+        </div>
+        <div id="verdict-secrets" class="box secrets-all" style="margin-bottom:16px">
+          <span class="section-label brown">🗃 WHAT EVERY SUSPECT WAS CONCEALING</span>
+          <div id="secrets-table"></div>
+        </div>
+        <div id="verdict-history" class="box history" style="margin-bottom:24px">
+          <span class="section-label blue">📚 HISTORICAL RECORD</span>
+          <p id="history-text" class="body-text"></p>
+        </div>
+        <div class="btn-row">
+          <button class="btn-primary" onclick="goHome()">← RETURN TO ARCHIVE</button>
+          <button class="btn-ghost lg" onclick="retryCase()">↺ RETRY CASE</button>
+        </div>
+      </div>
+ 
+    </div>
+  </div>
+ 
+</main>
+ 
+<footer id="site-footer">
+  ALL CASES INSPIRED BY DOCUMENTED EUROPEAN ENVIRONMENTAL CRIMES — CHARACTERS FICTIONALISED — © DOSSIER EUROPA
+</footer>
+ 
+<script>
+// ═══════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════
+const CASES = [
+  {
+    id: "EUR-01", country: "GERMANY", flag: "🇩🇪", stripeColor: "#8b1a1a", tagClass: "",
+    title: "DIESEL DAMNATION",
+    subtitle: "Wolfsburg, 2015. The software lied. So did someone else.",
+    era: "September 2015",
+    setting: "Wolfsburg, Germany. Three days before the US EPA's public announcement of the Volkswagen defeat device scandal, a mid-level emissions compliance engineer is found dead in the Mittellandkanal. His laptop is missing. His access badge was used to enter the R&D building at 2 AM.",
+    victim: {
+      name: "THOMAS BREITNER",
+      role: "Emissions Compliance Engineer, Volkswagen AG",
+      bio: "A 38-year-old engineer who had worked on the EA 189 diesel engine team since 2008. In the months before his death, he had begun cooperating quietly with an internal US legal team preparing for DOJ proceedings. He had documented, in personal encrypted notes, exactly who authorised the Akustikfunktion — the internal name for the defeat device code. He had arranged to meet a US Department of Justice contact in Frankfurt the following week.",
+      clue: "🔧 His personal calendar shows a recurring meeting labeled 'AF-Kontrolle' every Thursday for 18 months — a meeting that appears nowhere in official VW scheduling systems."
+    },
+    suspects: [
+      {
+        name: "DIPL.-ING. WERNER KASTL", role: "Head of Powertrain Software, VW AG", age: 54, avatar: "🧑‍💼",
+        motive: "Breitner's notes directly named Kastl as the engineer who signed off on deploying the defeat device in production models. Criminal prosecution in Germany and the US would mean prison. He had already hired a defence attorney in Hamburg.",
+        alibi: "Attending a supplier conference in Stuttgart. Hotel confirmed. But his personal vehicle's mileage log — submitted to VW fleet — shows 280km more than the Stuttgart route.",
+        secret: "He personally approved the software patch in 2009 under instruction from above, but the paper trail stops at his desk. He destroyed his project archive three weeks before Breitner's death.",
+        tell: "When pressed, he defaults to engineering jargon — 'thermally conditioned operating parameters' — to make misconduct sound like standard procedure.",
+        evidence: "💾 A USB drive retrieved from Breitner's desk drawer contains a partial email chain. The last visible sender before the chain was manually truncated: W.KASTL@volkswagen.de",
+        guilty: false
+      },
+      {
+        name: "CLAUDIA VORRINK", role: "Head of Legal & Compliance, VW Europe", age: 49, avatar: "👩‍⚖️",
+        motive: "She had been managing the internal cover-up for two years — suppressing US audit queries and coaching engineers to give non-answers. Breitner's DOJ cooperation would expose her obstruction. Her career, freedom, and €2.4M deferred bonus all at stake.",
+        alibi: "In Brüssel for a European Automobile Manufacturers lobbying meeting. Flight records confirm. However, she placed three calls to Wolfsburg that evening from a second mobile registered under her maiden name.",
+        secret: "She drafted the internal legal memo that reclassified the defeat device as a 'calibration variant' — a document that was distributed to engineers as legal cover and later destroyed.",
+        tell: "Uses the phrase 'we followed all applicable regulatory frameworks' before answering any direct question, a verbal spacer she deploys to buy thinking time.",
+        evidence: "📱 Cell tower records for her secondary phone show it pinged a Wolfsburg tower at 23:47 — while her primary phone remained in Brussels.",
+        guilty: false
+      },
+      {
+        name: "PIETER VAN HOUTEN", role: "External Auditor, DEKRA Automotive Certification", age: 61, avatar: "🕵",
+        motive: "Van Houten had certified VW's emissions compliance for seven consecutive years, including the years the defeat device was active. If Breitner testified, Van Houten faced criminal charges for fraudulent certification — plus liability from every European government that relied on his audits.",
+        alibi: "At his home in Düsseldorf — confirmed by his wife. His car was garaged. But a neighbour reports seeing a taxi depart from his address at 10 PM.",
+        secret: "He received €180,000 in 'consultancy fees' from VW over five years, routed through a Liechtenstein shell company he co-owned with a VW procurement officer.",
+        tell: "Insists all certifications were 'process-compliant' — a distinction he draws carefully to separate process from actual emissions truth.",
+        evidence: "🚕 A Wolfsburg taxi company log shows a fare from Düsseldorf Hauptbahnhof to the VW North Gate at 23:15 — paid in cash.",
+        guilty: false
+      },
+      {
+        name: "ANNA-LISE BREITNER", role: "Thomas Breitner's wife, Secondary School Teacher", age: 36, avatar: "👩‍💻",
+        motive: "Thomas had told Anna-Lise he was going to testify. She had begged him not to — they had two children, she knew the people involved, and she had received a handwritten note through their letterbox three days earlier with the words 'Er soll schweigen.' She had not shown Thomas the note.",
+        alibi: "Home with children — confirmed by a neighbour who dropped off a key at 9 PM. But her car was found the next morning with 40km of unexplained overnight mileage.",
+        secret: "The note she received was not a threat from VW. It was from her brother — also a VW engineer — who feared Thomas's testimony would implicate him too. She had driven to meet her brother that night, and he had convinced her to try to stop Thomas. She did not plan to kill him, but she knows who saw Thomas last.",
+        tell: "She volunteers details about the children's bedtime routines unprompted — overconstructing her alibi for the early evening hours.",
+        evidence: "🚗 Her Volkswagen Golf's internal drive log — a feature she didn't know existed — records a 38km round trip beginning at 22:04.",
+        guilty: true
+      }
+    ],
+    solution: "ANNA-LISE BREITNER drove to meet Thomas by the canal, intending to convince him to withdraw from cooperation with the DOJ. The argument escalated. She did not plan to kill him. In the struggle over his laptop bag — which contained his encrypted notes — he fell into the canal. She left. She has carried this for years, believing the institution that killed her husband's integrity also killed him. The laptop was never recovered. Without Breitner's testimony, the internal authorisation chain above Kastl was never fully established. VW paid €33 billion in fines globally. Nobody from senior management served prison time in Germany.",
+    realInspiration: "Volkswagen Dieselgate scandal (2015–ongoing). The defeat device (Akustikfunktion) was confirmed in the EA 189 engine. Multiple engineers cooperated with US DOJ proceedings. No senior VW executive was imprisoned in Germany. The full internal authorisation chain has never been publicly disclosed."
+  },
+  {
+    id: "EUR-02", country: "ITALY", flag: "🇮🇹", stripeColor: "#2a4a8b", tagClass: "blue",
+    title: "LA TERRA DEI FUOCHI",
+    subtitle: "Naples, 2013. The Camorra buried it. Someone found it.",
+    era: "October 2013",
+    setting: "The 'Land of Fires' — the stretch of agricultural land between Naples and Caserta, Campania. A journalist investigating illegal toxic waste dumping by Camorra-linked companies has been found burned in his car near a known dump site. His source, a former Camorra waste logistics coordinator, has disappeared.",
+    victim: {
+      name: "FABIO ESPOSITO",
+      role: "Investigative Journalist, Il Mattino di Napoli",
+      bio: "A 44-year-old journalist who had spent three years documenting the illegal burial of industrial and radioactive waste across 800 hectares of Campanian farmland. His unpublished dossier — which he called 'Il Registro' — contained GPS coordinates of 140 dump sites, the names of 23 companies, and the identity of a Camorra clan coordinator who had agreed to testify. The dossier was not found at the scene. His editor received a partial draft file by anonymous email 48 hours after his death.",
+      clue: "📍 The partial draft references a company code: 'ECOTRANS-7'. This code appears in no public business registry in Italy or the EU — but a cross-reference with Europol's organised crime database links it to three active shell company investigations."
+    },
+    suspects: [
+      {
+        name: "DON SALVATORE MARCHETTI", role: "Camorra Clan Logistics Coordinator, Casalesi faction", age: 58, avatar: "🧑‍💼",
+        motive: "Esposito's source was a former subordinate of Marchetti. If the testimony went public, Marchetti faced life imprisonment and the exposure of a waste operation worth €80M annually. He had ordered journalists warned off before.",
+        alibi: "Under house arrest for an unrelated fraud charge — electronic tag confirmed his location. But house arrest in the Casalesi territory means little. He manages operations by proxy.",
+        secret: "He had already paid a police informant to identify Esposito's source. He knew the source's identity two months before the murder. However, he gave the order to 'scare' Esposito, not kill him — the escalation to murder was unauthorised by him.",
+        tell: "Communicates exclusively through his lawyer and a nephew. When asked direct questions, he responds only with 'non ricordo' — I don't remember.",
+        evidence: "📞 An intercepted call from Marchetti's nephew to an unknown number, three days before the murder: 'Il giornalista deve smettere di scrivere. Definitivamente.'",
+        guilty: false
+      },
+      {
+        name: "ING. ROBERTO FERRANO", role: "CEO, Ferrano Smaltimenti Industriali SpA", age: 52, avatar: "👩‍⚖️",
+        motive: "Ferrano's company was one of the 23 named in Esposito's dossier. He had paid the Camorra €4M to handle 'non-conforming waste' disposal over seven years — toxic solvents, asbestos, and undisclosed pharmaceutical byproducts. Criminal liability and company dissolution.",
+        alibi: "Dining with clients at a Naples restaurant — eight witnesses. Left at 23:00. The murder occurred between midnight and 2 AM.",
+        secret: "He had been a protected informant for the DIA (Italy's anti-mafia directorate) for two years, feeding them minor Camorra intelligence in exchange for protection from prosecution. The DIA knew about his waste contracts and had suppressed prosecution to keep him as an asset.",
+        tell: "Very precise about times — gives exact minutes for every alibi moment, which indicates rehearsal rather than genuine recall.",
+        evidence: "🏭 Soil core samples from a site named in the draft dossier match chemical signatures from Ferrano's documented waste manifests — illegally obtained by Esposito.",
+        guilty: false
+      },
+      {
+        name: "COMMISSARIO ELENA RUSSO", role: "Carabinieri Environmental Crimes Unit, Naples", age: 43, avatar: "🕵",
+        motive: "Russo had been running a parallel investigation into terra dei fuochi for two years. Esposito's imminent publication would blow her operation before she could arrest the full network — and would reveal that she had known about the dump sites for 18 months without acting. Her inaction was professional failure at best, complicity at worst.",
+        alibi: "On duty — shift records confirm. But her unit's patrol log shows a 90-minute unlogged gap between 00:30 and 02:00.",
+        secret: "She had received Esposito's source's identity from a civilian tip six weeks earlier and had not acted on it — because acting would have forced her to disclose the 18-month knowledge gap to her superiors. She feared the source more than the Camorra.",
+        tell: "Answers questions about the night with operational detail — road numbers, weather conditions — suggesting she was there and is describing real observation, not fabrication.",
+        evidence: "🚓 A fuel card transaction places a Carabinieri vehicle at a petrol station 4km from the crime scene at 01:17 — a vehicle assigned to Russo's unit that night.",
+        guilty: false
+      },
+      {
+        name: "MARCO VITALE", role: "Esposito's Source — former Camorra waste coordinator", age: 39, avatar: "👩‍💻",
+        motive: "Vitale had agreed to testify. But the night before his meeting with Esposito's editor, he received proof that the Camorra knew his identity — which meant Marchetti's people knew Esposito had him. In a panic, Vitale concluded that Esposito had betrayed him. He had not — the leak came from the Carabinieri file. Vitale killed Esposito believing he had been sold out.",
+        alibi: "Claims to have been in Salerno, 60km south, staying at a cousin's apartment. The cousin confirms — but the cousin is his brother-in-law, and phone records show Vitale's mobile in Naples until 01:30.",
+        secret: "He took Il Registro from the car, intending to destroy it, then lost his nerve and sent the partial draft anonymously to the editor — partly out of guilt, partly to deflect suspicion onto the companies named in it.",
+        tell: "When asked about Esposito, he speaks with a grief that is real — but describes the last conversation in too much detail, including the location of the meeting that was never publicly disclosed.",
+        evidence: "🔥 Accelerant residue on Vitale's jacket, detected when Carabinieri searched his car, matches the chemical compound used to ignite Esposito's vehicle.",
+        guilty: true
+      }
+    ],
+    solution: "MARCO VITALE — Esposito's own source — killed him in a panicked misidentification. Believing Esposito had sold his identity to the Camorra, he intercepted him near the dump site, killed him, took the dossier, and burned the car. The Camorra did not order the murder. Commissario Russo's leaked file — not Esposito — had exposed Vitale. The real culprit of the environmental crime remains the network of companies and the Casalesi clan, operating freely for another four years before partial prosecutions began in 2017. The 140 dump sites were formally identified by the Italian government in 2014. Remediation is still ongoing.",
+    realInspiration: "Terra dei fuochi (Land of Fires), Campania, Italy — documented since the 1990s, formally acknowledged by the Italian government in 2013–2014. Camorra involvement in illegal waste disposal ('ecomafia') has been extensively investigated by the NGO Legambiente. Multiple journalists and anti-mafia activists have been threatened. The sites contain industrial, chemical, and reportedly low-level radioactive waste."
+  },
+  {
+    id: "EUR-03", country: "ROMANIA", flag: "🇷🇴", stripeColor: "#2a6a2a", tagClass: "green",
+    title: "ROȘIA MONTANĂ",
+    subtitle: "Transylvania, 2013. Gold. Cyanide. And a referendum that never happened.",
+    era: "September 2013",
+    setting: "Roșia Montană, Alba County, Romania. The government has just fast-tracked parliamentary approval for Gabriel Resources' gold mining project, which would use cyanide leaching to extract gold from Europe's largest open-cast mine — destroying a UNESCO-listed Roman mining heritage site and displacing 2,000 people. A parliamentary aide who had obtained a leaked draft of a secret side agreement between the government and Gabriel Resources is found dead in her Bucharest apartment. The draft is gone.",
+    victim: {
+      name: "IOANA FLORESCU",
+      role: "Parliamentary Aide, Romanian Chamber of Deputies",
+      bio: "A 31-year-old law graduate working for an opposition MP on the Environment Committee. She had obtained — through a source inside the Economy Ministry — a 14-page addendum to the official Gabriel Resources contract, showing the Romanian government had secretly agreed to waive all future environmental liability claims in perpetuity and to suppress a planned 2014 environmental impact referendum. She had photographed the document and emailed the image to one person. Her phone was taken from the scene.",
+      clue: "⚖️ Her browser history, partially recovered from cloud sync, shows she visited the website of the Permanent Court of Arbitration in The Hague — specifically its investor-state dispute section — three times in the week before her death."
+    },
+    suspects: [
+      {
+        name: "MINISTER GHEORGHE ALDEA", role: "Romanian Minister of Economy and Mining", age: 57, avatar: "🧑‍💼",
+        motive: "Aldea had personally negotiated the secret addendum. Its exposure would destroy the parliamentary fast-track vote, trigger EU infringement proceedings, and expose him to corruption charges. He had received political funding from a Gabriel Resources-linked offshore entity.",
+        alibi: "In Bucharest, at a party fundraiser — photographed, timestamped. Left at 23:30. Florescu's estimated time of death: between midnight and 3 AM.",
+        secret: "The funding from Gabriel Resources was routed through a Cypriot holding company in which his son-in-law held a directorship. He was being investigated separately by DIICOT (Romania's anti-corruption directorate) for an unrelated contract — and was using the mining deal as leverage to stay politically protected.",
+        tell: "Responds to questions about the addendum by reframing it as a 'standard investor protection clause' — language that appears verbatim in Gabriel Resources' public investor communications.",
+        evidence: "📄 A printer access log from the Economy Ministry building shows the addendum document was printed at 21:45 on the night Florescu received her leaked copy — from a printer in Aldea's outer office suite.",
+        guilty: false
+      },
+      {
+        name: "JAMES TOLLIVER", role: "Gabriel Resources VP, European Operations", age: 48, avatar: "👩‍⚖️",
+        motive: "Gabriel Resources had invested €600M over 15 years. The leak of the addendum would collapse the parliamentary vote, destroy share price, and trigger €4B in investor-state arbitration losses. Tolliver had previously threatened a Romanian journalist's editor by phone over a less significant story.",
+        alibi: "At the Gabriel Resources Bucharest office until 22:00 — keycard log confirms. Claimed to have gone directly to his hotel. CCTV at the hotel shows him checking in at 23:50 — a 110-minute gap for a 15-minute journey.",
+        secret: "He knew Florescu had the document before she died. A Ministry mole had informed him. He had arranged for a private investigator to follow her for four days. He had not ordered her death — but he knew who she had emailed the photograph to.",
+        tell: "Uses the word 'unfortunately' before every answer about Florescu, a tell of performed sympathy over genuine surprise.",
+        evidence: "📸 A private investigator's surveillance photo, found on a recovered hard drive, shows Florescu entering her apartment building at 23:40 — with a second figure behind her, out of frame.",
+        guilty: false
+      },
+      {
+        name: "DEPUTAT CONSTANTIN MOGA", role: "Opposition MP, Environment Committee (Florescu's employer)", age: 53, avatar: "🕵",
+        motive: "Florescu had not told Moga she had the document. She had emailed it to a journalist directly, bypassing him. Moga had his own parallel negotiations with Gabriel Resources — a secret agreement to withdraw his parliamentary opposition in exchange for a stake in a local subsidiary. Florescu's leak would expose both the addendum and his betrayal of his own party.",
+        alibi: "At his constituency office in Cluj — confirmed by his driver and two staff. However, he had sent his driver home early that evening, and the office's external security camera shows the building dark by 21:00.",
+        secret: "He had been informed of the leaked document by the same Ministry mole who informed Tolliver. He had contacted Gabriel Resources that afternoon to warn them — effectively triggering the sequence of events that led to Florescu's death.",
+        tell: "Expresses outrage about the mining project in public but has never introduced formal legislation to block it — a contradiction he becomes agitated when pressed on.",
+        evidence: "📧 A draft email, unsent, recovered from his parliamentary account: 'She has the annex. She is going to the press. You need to deal with this tonight.'",
+        guilty: false
+      },
+      {
+        name: "ELENA DĂNILĂ", role: "Economy Ministry Deputy Secretary, Florescu's source", age: 44, avatar: "👩‍💻",
+        motive: "Dănilă had leaked the addendum to Florescu believing she would hand it to her MP employer — giving it political protection. When she learned Florescu had emailed it directly to a journalist, she panicked. A journalist would publish immediately. Dănilă would be identified as the leak source within 24 hours and lose everything: her position, her pension, and her freedom under Romania's state secrecy statutes.",
+        alibi: "At home in Bucharest, alone. No witnesses. Her building's lobby camera shows her leaving at 23:55 and returning at 02:40.",
+        secret: "She had leaked the document not purely out of principle — she was being pressured by a DIICOT contact to produce evidence of ministerial corruption as part of an unrelated investigation. She was herself being coerced. Killing Florescu was an act of terrified self-preservation, not ideology.",
+        tell: "Keeps returning to how much she 'respected' Florescu — an emphasis that reads as guilt management, not genuine tribute.",
+        evidence: "🔑 Florescu's phone, taken from the scene, was found wiped and discarded in a bin two streets from Dănilă's apartment building. Her fingerprints were not on it — but the wipe was performed using a Ministry-issued data destruction protocol only accessible to senior civil servants.",
+        guilty: true
+      }
+    ],
+    solution: "ELENA DĂNILĂ — the leak source herself — killed Ioana Florescu to retrieve the photographed document and prevent her own identification. She had not anticipated Florescu would bypass her MP and go directly to a journalist. When she learned of this, she went to Florescu's apartment that night to recover the phone. The confrontation turned fatal. She wiped the phone using tools she knew from her Ministry role and disposed of it. The parliamentary vote passed the following week. The project was blocked in 2013 only by mass street protests — the largest in Romania since 1989 — not by legal exposure. Gabriel Resources subsequently sued Romania at the ICSID arbitration court for €4.4 billion, a case still partially active. The mine was never built.",
+    realInspiration: "Roșia Montană Gold Mining Project, Romania (1995–present). Gabriel Resources' attempt to build Europe's largest open-cast gold mine using cyanide leaching. The Romanian government's 2013 fast-track legislation triggered mass protests. The site was granted UNESCO World Heritage status in 2021, effectively blocking the project. Gabriel Resources' €4.4B ICSID arbitration claim against Romania is one of the largest investor-state disputes in European history."
+  }
+];
+ 
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let state = {
+  currentCase: null,
+  phase: 0,
+  openSuspect: null,
+  unlockedEvidence: [],
+  unlockedSecrets: [],
+  accusation: null,
+  verdict: null
+};
+ 
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function esc(str) {
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+ 
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+ 
+function updatePhasePips(phase) {
+  const pips = document.querySelectorAll('.phase-pip');
+  pips.forEach(pip => {
+    const p = parseInt(pip.dataset.phase);
+    pip.classList.remove('active','done');
+    if (p === phase) pip.classList.add('active');
+    else if (p < phase) pip.classList.add('done');
+  });
+}
+ 
+function updateEvidenceCounter() {
+  const el = document.getElementById('evidence-counter');
+  if (el && state.currentCase) {
+    el.textContent = `${state.unlockedEvidence.length}/${state.currentCase.suspects.length} EVIDENCE FILES OPENED`;
+  }
+}
+ 
+function updateAccusationArea() {
+  const area = document.getElementById('accusation-area');
+  if (!area || !state.currentCase) return;
+  const needed = 2;
+  if (state.unlockedEvidence.length >= needed) {
+    let btns = state.currentCase.suspects.map((s,i) =>
+      `<button class="btn-accuse" onclick="accuse('${esc(s.name)}')">▸ ${esc(s.name)}</button>`
+    ).join('');
+    area.innerHTML = `
+      <div class="box red-accent">
+        <span class="section-label">⚖ FORMAL ACCUSATION</span>
+        <p style="font-size:12px;color:#5a3020;margin-bottom:16px;line-height:1.7">You have reviewed sufficient evidence. One accusation. No appeals. The full weight of your investigation rests on this choice.</p>
+        <div class="accuse-grid">${btns}</div>
+      </div>`;
+  } else {
+    const rem = needed - state.unlockedEvidence.length;
+    area.innerHTML = `<div class="box" style="text-align:center"><p class="gate-msg">EXAMINE AT LEAST ${rem} MORE EVIDENCE FILE${rem!==1?'S':''} TO PROCEED TO ACCUSATION</p></div>`;
+  }
+}
+ 
+// ═══════════════════════════════════════════
+//  HOME
+// ═══════════════════════════════════════════
+function buildHome() {
+  const list = document.getElementById('case-list');
+  list.innerHTML = CASES.map((c,i) => `
+    <div class="case-card" onclick="startCase(${i})">
+      <div class="case-card-stripe" style="background:${c.stripeColor}"></div>
+      <div class="case-card-inner">
+        <div class="case-card-top">
+          <div style="flex:1">
+            <div class="case-card-meta">
+              <span style="font-size:22px">${c.flag}</span>
+              <span class="tag ${c.tagClass}" style="margin-bottom:0">${esc(c.country)} · ${esc(c.era)}</span>
+              <span class="case-id">CASE ${esc(c.id)}</span>
+            </div>
+            <h2 class="case-title">${esc(c.title)}</h2>
+            <div class="case-subtitle">${esc(c.subtitle)}</div>
+            <div class="case-preview">${esc(c.setting.slice(0,200))}…</div>
+          </div>
+          <div style="margin-left:24px;text-align:right;flex-shrink:0">
+            <div class="case-suspects-count">${c.suspects.length} SUSPECTS</div>
+            <div style="font-size:36px;opacity:0.15">⚖</div>
+          </div>
+        </div>
+        <div class="case-card-footer">INSPIRED BY // ${esc(c.realInspiration.slice(0,90))}…</div>
+      </div>
+    </div>
+  `).join('');
+}
+ 
+// ═══════════════════════════════════════════
+//  START CASE
+// ═══════════════════════════════════════════
+function startCase(idx) {
+  state.currentCase = CASES[idx];
+  state.phase = 1;
+  state.openSuspect = null;
+  state.unlockedEvidence = [];
+  state.unlockedSecrets = [];
+  state.accusation = null;
+  state.verdict = null;
+ 
+  // show header controls
+  document.getElementById('phase-pips').style.display = 'flex';
+  document.getElementById('notes-toggle').style.display = 'inline-block';
+  document.getElementById('back-btn').style.display = 'inline-block';
+ 
+  showScreen('screen-case');
+  setPhase(1);
+}
+ 
+// ═══════════════════════════════════════════
+//  SET PHASE
+// ═══════════════════════════════════════════
+function setPhase(phase) {
+  state.phase = phase;
+  updatePhasePips(phase);
+ 
+  // hide all phase divs
+  ['phase-briefing','phase-investigation','phase-verdict'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active');
+  });
+ 
+  if (phase === 1) {
+    renderBriefing();
+    document.getElementById('phase-briefing').classList.add('active');
+  } else if (phase === 2) {
+    renderInvestigation();
+    document.getElementById('phase-investigation').classList.add('active');
+  } else if (phase === 4) {
+    renderVerdict();
+    document.getElementById('phase-verdict').classList.add('active');
+  }
+}
+ 
+// ═══════════════════════════════════════════
+//  BRIEFING
+// ═══════════════════════════════════════════
+function renderBriefing() {
+  const c = state.currentCase;
+  document.getElementById('brief-flag').textContent = c.flag;
+  const tagEl = document.getElementById('brief-tag');
+  tagEl.textContent = `CASE ${c.id} · ${c.country}`;
+  tagEl.className = `tag ${c.tagClass}`;
+  document.getElementById('brief-title').textContent = c.title;
+  document.getElementById('brief-subtitle').textContent = c.subtitle;
+  document.getElementById('brief-setting').textContent = c.setting;
+  document.getElementById('victim-name').textContent = c.victim.name;
+  document.getElementById('victim-role').textContent = c.victim.role;
+  document.getElementById('victim-bio').textContent = c.victim.bio;
+  document.getElementById('victim-clue').textContent = c.victim.clue;
+}
+ 
+// ═══════════════════════════════════════════
+//  INVESTIGATION
+// ═══════════════════════════════════════════
+function renderInvestigation() {
+  const c = state.currentCase;
+  const tagEl = document.getElementById('inv-tag');
+  tagEl.textContent = `INVESTIGATION ACTIVE · ${c.id}`;
+  tagEl.className = `tag ${c.tagClass}`;
+  document.getElementById('inv-title').textContent = c.title;
+  updateEvidenceCounter();
+  renderSuspects();
+  updateAccusationArea();
+}
+ 
+function renderSuspects() {
+  const c = state.currentCase;
+  const list = document.getElementById('suspect-list');
+  list.innerHTML = c.suspects.map((s,i) => {
+    const isOpen = state.openSuspect === i;
+    const hasEv = state.unlockedEvidence.includes(i);
+    const hasSec = state.unlockedSecrets.includes(i);
+    return `
+      <div class="suspect-card ${isOpen?'open':''}" id="suspect-card-${i}">
+        <div class="suspect-header" onclick="toggleSuspect(${i})">
+          <div style="display:flex;align-items:center">
+            <div class="suspect-avatar">${s.avatar}</div>
+            <div class="suspect-info">
+              <div class="suspect-name">${esc(s.name)}</div>
+              <div class="suspect-role">${esc(s.role)} · Age ${s.age}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${hasEv ? '<span class="badge evidence">EVIDENCE ✓</span>' : ''}
+            ${hasSec ? '<span class="badge secret">SECRET ✓</span>' : ''}
+            <span class="chevron">▼</span>
+          </div>
+        </div>
+        <div class="suspect-body">
+          <hr class="suspect-divider">
+          <div class="grid-two">
+            <div class="box motive">
+              <span class="mini-label orange">MOTIVE</span>
+              <p class="body-text">${esc(s.motive)}</p>
+            </div>
+            <div class="box alibi">
+              <span class="mini-label blue">ALIBI</span>
+              <p class="body-text">${esc(s.alibi)}</p>
+            </div>
+          </div>
+          <div class="box tell" style="margin-bottom:14px">
+            <span class="mini-label gold">BEHAVIOURAL TELL</span>
+            <p class="body-text" style="font-style:italic">"${esc(s.tell)}"</p>
+          </div>
+          <div class="suspect-actions">
+            <button class="${hasEv?'btn-ghost':'btn-dark'}" onclick="unlockEvidence(${i})" style="${hasEv?'opacity:0.7':''}">
+              ${hasEv ? '✓ EVIDENCE EXAMINED' : '🔍 EXAMINE EVIDENCE'}
+            </button>
+            <button class="btn-ghost" onclick="unlockSecret(${i})">
+              ${hasSec ? '✓ SECRET REVEALED' : '🗃 DIG DEEPER'}
+            </button>
+          </div>
+          ${hasEv ? `<div class="box evidence"><span class="mini-label orange">PHYSICAL EVIDENCE</span><p class="body-text">${esc(s.evidence)}</p></div>` : ''}
+          ${hasSec ? `<div class="box secret"><span class="mini-label red">HIDDEN SECRET</span><p class="body-text">${esc(s.secret)}</p></div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+ 
+function toggleSuspect(i) {
+  state.openSuspect = state.openSuspect === i ? null : i;
+  renderSuspects();
+}
+ 
+function unlockEvidence(i) {
+  if (!state.unlockedEvidence.includes(i)) state.unlockedEvidence.push(i);
+  renderSuspects();
+  updateEvidenceCounter();
+  updateAccusationArea();
+}
+ 
+function unlockSecret(i) {
+  if (!state.unlockedSecrets.includes(i)) state.unlockedSecrets.push(i);
+  renderSuspects();
+}
+ 
+// ═══════════════════════════════════════════
+//  ACCUSATION
+// ═══════════════════════════════════════════
+function accuse(name) {
+  state.accusation = name;
+  const s = state.currentCase.suspects.find(s => s.name === name);
+  state.verdict = s && s.guilty ? 'CORRECT' : 'WRONG';
+  setPhase(4);
+}
+ 
+// ═══════════════════════════════════════════
+//  VERDICT
+// ═══════════════════════════════════════════
+function renderVerdict() {
+  const c = state.currentCase;
+  const correct = state.verdict === 'CORRECT';
+ 
+  // verdict box
+  const guiltyName = c.suspects.find(s => s.guilty).name;
+  document.getElementById('verdict-box').innerHTML = `
+    <div class="${correct?'box verdict-correct':'box verdict-wrong'}">
+      <div class="verdict-icon">${correct ? '⚖' : '✗'}</div>
+      <div class="verdict-status" style="color:${correct?'#2a6a2a':'#8b1a1a'}">${correct?'ACCUSATION SUSTAINED':'ACCUSATION REJECTED'}</div>
+      <h2 class="verdict-name" style="color:${correct?'#1a4a1a':'#6a1010'}">${correct ? esc(state.accusation) : esc(state.accusation) + ' WAS INNOCENT'}</h2>
+      <p class="verdict-msg" style="color:${correct?'#2a6a2a':'#6a2a2a'}">
+        ${correct ? "Your accusation was correct. The case is closed — for the murder. The environmental crime continues." : `The actual perpetrator: <strong>${esc(guiltyName)}</strong>`}
+      </p>
+    </div>`;
+ 
+  document.getElementById('solution-text').textContent = c.solution;
+ 
+  // secrets table
+  document.getElementById('secrets-table').innerHTML = c.suspects.map(s => `
+    <div class="secrets-row">
+      <div class="secrets-who">${esc(s.name)} ${s.guilty ? '<span class="guilty-star">★ GUILTY</span>' : ''}</div>
+      <div class="secrets-what">${esc(s.secret)}</div>
+    </div>`).join('');
+ 
+  document.getElementById('history-text').textContent = c.realInspiration;
+}
+ 
+// ═══════════════════════════════════════════
+//  NAV
+// ═══════════════════════════════════════════
+function goHome() {
+  state.currentCase = null;
+  document.getElementById('phase-pips').style.display = 'none';
+  document.getElementById('notes-toggle').style.display = 'none';
+  document.getElementById('back-btn').style.display = 'none';
+  // close notes
+  document.getElementById('notes-panel').classList.remove('open');
+  document.getElementById('case-wrap').classList.remove('notes-open');
+  showScreen('screen-home');
+}
+ 
+function retryCase() {
+  state.phase = 1;
+  state.openSuspect = null;
+  state.unlockedEvidence = [];
+  state.unlockedSecrets = [];
+  state.accusation = null;
+  state.verdict = null;
+  setPhase(1);
+}
+ 
+// ═══════════════════════════════════════════
+//  NOTES TOGGLE
+// ═══════════════════════════════════════════
+document.getElementById('notes-toggle').addEventListener('click', function() {
+  const panel = document.getElementById('notes-panel');
+  const wrap = document.getElementById('case-wrap');
+  panel.classList.toggle('open');
+  wrap.classList.toggle('notes-open');
+  this.textContent = panel.classList.contains('open') ? '✕ NOTES' : '✎ NOTES';
+});
+ 
+document.getElementById('back-btn').addEventListener('click', goHome);
+ 
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+buildHome();
+</script>
 </body>
 </html>
